@@ -1,0 +1,431 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#070b12">
+<title>Газ 3D</title>
+<style>
+:root{
+  --bg:#070b12; --fg:#e8eef8; --dim:#8b9bb4;
+  --line:#1c2637; --accent:#4dd0ff;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html,body{
+  margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--fg);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  overscroll-behavior:none;user-select:none;-webkit-user-select:none;
+}
+canvas{display:block;width:100%;height:100%;touch-action:none;}
+
+/* ---------- HUD ---------- */
+#hud{
+  position:fixed;top:0;left:0;right:0;pointer-events:none;
+  padding:calc(8px + env(safe-area-inset-top)) 10px 8px;
+}
+.hud-card{
+  display:inline-block;background:rgba(10,16,26,.66);
+  -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
+  border:1px solid rgba(255,255,255,.07);border-radius:14px;
+  padding:8px 11px;font-size:12px;line-height:1.55;
+  font-variant-numeric:tabular-nums;min-width:150px;
+}
+.g-line{display:flex;align-items:center;gap:7px;white-space:nowrap;}
+.g-line .dot{width:9px;height:9px;border-radius:50%;flex:0 0 auto;}
+.g-line .nm{color:var(--dim);min-width:12px;}
+.g-line .tv{font-weight:600;}
+.hud-bottom{
+  margin-top:6px;padding-top:6px;border-top:1px solid rgba(255,255,255,.08);
+  display:flex;gap:12px;color:var(--dim);
+}
+.hud-bottom b{color:var(--fg);font-weight:600;}
+
+/* ---------- Bottom UI ---------- */
+#bottom{
+  position:fixed;left:0;right:0;bottom:0;display:flex;flex-direction:column;
+  gap:8px;padding:0 10px calc(10px + env(safe-area-inset-bottom));
+  pointer-events:none;
+}
+#bottom>*{pointer-events:auto;}
+#bar{display:flex;gap:8px;}
+.btn{
+  flex:1;padding:14px 10px;border-radius:14px;border:1px solid var(--line);
+  background:rgba(15,23,36,.92);color:var(--fg);font-size:15px;font-weight:600;
+  font-family:inherit;-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
+  transition:transform .08s ease,background .15s;
+}
+.btn:active{transform:scale(.97);}
+.btn.primary{background:rgba(77,208,255,.16);border-color:rgba(77,208,255,.5);color:var(--accent);}
+.btn.icon{flex:0 0 62px;font-size:18px;}
+
+#panel{
+  background:rgba(10,16,26,.94);
+  -webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);
+  border:1px solid rgba(255,255,255,.08);border-radius:18px;
+  padding:6px 14px 14px;max-height:56vh;overflow-y:auto;
+  -webkit-overflow-scrolling:touch;display:none;
+}
+#panel.open{display:block;}
+.sec{padding:10px 0;border-bottom:1px solid rgba(255,255,255,.06);}
+.sec:last-child{border-bottom:none;}
+.sec-t{
+  font-size:11px;letter-spacing:.09em;text-transform:uppercase;
+  color:var(--dim);font-weight:700;margin:4px 0 6px;
+}
+.row{display:flex;align-items:center;gap:10px;font-size:13px;padding:3px 0;}
+.row label{flex:0 0 88px;color:var(--dim);}
+.row .val{flex:0 0 48px;text-align:right;font-weight:700;font-size:12px;
+  font-variant-numeric:tabular-nums;}
+input[type=range]{
+  flex:1;min-width:0;height:28px;background:transparent;
+  -webkit-appearance:none;appearance:none;margin:0;
+}
+input[type=range]::-webkit-slider-runnable-track{height:4px;border-radius:2px;background:#243149;}
+input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none;width:22px;height:22px;border-radius:50%;
+  background:var(--accent);margin-top:-9px;
+  box-shadow:0 0 0 5px rgba(77,208,255,.13);
+}
+input[type=range]::-moz-range-track{height:4px;border-radius:2px;background:#243149;}
+input[type=range]::-moz-range-thumb{
+  width:22px;height:22px;border:none;border-radius:50%;background:var(--accent);
+}
+.seg{display:flex;gap:8px;margin:6px 0 2px;}
+.seg button{
+  flex:1;padding:11px 6px;border-radius:11px;border:1px solid #243149;
+  background:#111a28;color:var(--dim);font-size:12px;font-weight:700;font-family:inherit;
+}
+.seg button.on{background:rgba(77,208,255,.15);border-color:var(--accent);color:var(--accent);}
+.gsec-h{display:flex;align-items:center;gap:7px;font-size:13px;font-weight:700;margin:8px 0 2px;}
+.gsec-h .dot{width:10px;height:10px;border-radius:50%;}
+.gsec-h .dim{color:var(--dim);font-weight:500;font-size:11px;}
+.hint{font-size:11px;color:var(--dim);line-height:1.45;margin-top:4px;}
+</style>
+</head>
+<body>
+
+<canvas id="c"></canvas>
+
+<div id="hud">
+  <div class="hud-card">
+    <div id="hudGroups"></div>
+    <div class="hud-bottom">
+      <span>P <b id="pVal">—</b></span>
+      <span>E <b id="eVal">—</b></span>
+      <span>уд/с <b id="cVal">—</b></span>
+    </div>
+  </div>
+</div>
+
+<div id="bottom">
+  <div id="panel">
+    <div class="sec">
+      <div class="sec-t">Столкновения</div>
+      <div class="row">
+        <label>Упругость</label>
+        <input type="range" id="rest" min="0.5" max="1" step="0.01" value="0.98">
+        <span class="val" id="restV">0.98</span>
+      </div>
+      <div class="hint">1.00 — упругие (энергия сохраняется), меньше — неупругие (газ остывает). Импульс сохраняется всегда.</div>
+    </div>
+
+    <div class="sec">
+      <div class="sec-t">Стенки</div>
+      <div class="seg" id="wallSeg">
+        <button data-wall="reflect" class="on">Отражают</button>
+        <button data-wall="absorb">Поглощают тепло</button>
+      </div>
+      <div class="row" id="wallTRow" style="display:none">
+        <label>T стенки</label>
+        <input type="range" id="wallT" min="0.1" max="3" step="0.05" value="1">
+        <span class="val" id="wallTV">1.00</span>
+      </div>
+    </div>
+
+    <div class="sec" id="groupsSec"></div>
+
+    <div class="sec">
+      <div class="sec-t">Симуляция</div>
+      <div class="row">
+        <label>Скорость</label>
+        <input type="range" id="ts" min="0.1" max="2" step="0.05" value="1">
+        <span class="val" id="tsV">1.00×</span>
+      </div>
+    </div>
+  </div>
+
+  <div id="bar">
+    <button id="btnPlay" class="btn primary">▶ Старт</button>
+    <button id="btnReset" class="btn icon">⟲</button>
+    <button id="btnPanel" class="btn icon">⚙</button>
+  </div>
+</div>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+const CFG = { L: 12, baseR: 0.30, speedScale: 2.2, dt: 1/120, maxSub: 4 };
+const HALF = CFG.L / 2;
+
+const GROUPS = [
+  { color: 0xff6b6b, hex: '#ff6b6b', count: 40, r: 0.30, T: 1.00 },
+  { color: 0x4dd0ff, hex: '#4dd0ff', count: 40, r: 0.24, T: 1.80 },
+  { color: 0xffd166, hex: '#ffd166', count: 30, r: 0.36, T: 0.60 },
+];
+
+const state = { running: false, restitution: 0.98, wallMode: 'reflect', wallT: 1.0, timeScale: 1.0 };
+
+const canvas = document.getElementById('c');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x070b12);
+const camera = new THREE.PerspectiveCamera(55, 1, 0.1, 500);
+const controls = new OrbitControls(camera, canvas);
+controls.enableDamping = true; controls.dampingFactor = 0.08; controls.enablePan = false;
+controls.rotateSpeed = 0.7; controls.zoomSpeed = 0.8; controls.target.set(0, 0, 0);
+
+scene.add(new THREE.HemisphereLight(0x8fa8ff, 0x0b1220, 1.15));
+const dl1 = new THREE.DirectionalLight(0xffffff, 1.25); dl1.position.set(9, 14, 11); scene.add(dl1);
+const dl2 = new THREE.DirectionalLight(0x5ea8ff, 0.65); dl2.position.set(-11, -7, -8); scene.add(dl2);
+
+const boxGeo = new THREE.BoxGeometry(CFG.L, CFG.L, CFG.L);
+scene.add(new THREE.LineSegments(new THREE.EdgesGeometry(boxGeo),
+  new THREE.LineBasicMaterial({ color: 0x33527a, transparent: true, opacity: 0.95 })));
+scene.add(new THREE.Mesh(boxGeo, new THREE.MeshBasicMaterial({
+  color: 0x12314f, transparent: true, opacity: 0.075, side: THREE.BackSide, depthWrite: false })));
+
+const sphereGeo = new THREE.SphereGeometry(1, 14, 10);
+const groupMaterials = GROUPS.map(g => new THREE.MeshStandardMaterial({
+  color: g.color, emissive: g.color, emissiveIntensity: 0.32, roughness: 0.35, metalness: 0.05 }));
+
+let particles = [], wallImpulse = 0, collisionCount = 0;
+const massOf = r => Math.pow(r / CFG.baseR, 3);
+
+function gauss() {
+  let u = 0, v = 0;
+  while (u === 0) u = Math.random();
+  while (v === 0) v = Math.random();
+  return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+}
+
+function shuffle(a) {
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = (Math.random() * (i + 1)) | 0;
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function buildParticles() {
+  for (const p of particles) scene.remove(p.mesh);
+  particles = [];
+  const N = GROUPS.reduce((s, g) => s + g.count, 0);
+  const side = Math.max(1, Math.ceil(Math.cbrt(N)));
+  const cell = CFG.L / side;
+  const cells = [];
+  for (let i = 0; i < side; i++) for (let j = 0; j < side; j++) for (let k = 0; k < side; k++) cells.push([i, j, k]);
+  shuffle(cells);
+  let idx = 0;
+  for (let gi = 0; gi < GROUPS.length; gi++) {
+    const g = GROUPS[gi], m = massOf(g.r);
+    for (let n = 0; n < g.count; n++) {
+      const [i, j, k] = cells[idx++];
+      const x = -HALF + cell * (i + 0.5) + (Math.random() - 0.5) * cell * 0.55;
+      const y = -HALF + cell * (j + 0.5) + (Math.random() - 0.5) * cell * 0.55;
+      const z = -HALF + cell * (k + 0.5) + (Math.random() - 0.5) * cell * 0.55;
+      const s = CFG.speedScale * Math.sqrt(g.T / m);
+      const mesh = new THREE.Mesh(sphereGeo, groupMaterials[gi]);
+      mesh.scale.setScalar(g.r); mesh.position.set(x, y, z); scene.add(mesh);
+      particles.push({ gi, x, y, z, vx: s * gauss(), vy: s * gauss(), vz: s * gauss(), r: g.r, m, mesh });
+    }
+  }
+  wallImpulse = 0; collisionCount = 0;
+}
+
+function wallHit(p, axis, sign) {
+  const key = axis === 'x' ? 'vx' : axis === 'y' ? 'vy' : 'vz';
+  const v = p[key];
+  if (v * sign <= 0) return;
+  wallImpulse += (1 + state.restitution) * Math.abs(v) * p.m;
+  p[key] = -v * state.restitution;
+  if (state.wallMode === 'absorb' && Math.random() < 0.6) {
+    const s = CFG.speedScale * Math.sqrt(state.wallT / p.m);
+    p.vx = s * gauss(); p.vy = s * gauss(); p.vz = s * gauss();
+  }
+}
+
+function physicsStep(dt) {
+  const n = particles.length, e = state.restitution;
+  for (let i = 0; i < n; i++) { const p = particles[i]; p.x += p.vx * dt; p.y += p.vy * dt; p.z += p.vz * dt; }
+  for (let i = 0; i < n; i++) {
+    const p = particles[i], r = p.r;
+    if (p.x - r < -HALF) { p.x = -HALF + r; wallHit(p, 'x', -1); } else if (p.x + r > HALF) { p.x = HALF - r; wallHit(p, 'x', 1); }
+    if (p.y - r < -HALF) { p.y = -HALF + r; wallHit(p, 'y', -1); } else if (p.y + r > HALF) { p.y = HALF - r; wallHit(p, 'y', 1); }
+    if (p.z - r < -HALF) { p.z = -HALF + r; wallHit(p, 'z', -1); } else if (p.z + r > HALF) { p.z = HALF - r; wallHit(p, 'z', 1); }
+  }
+  for (let i = 0; i < n; i++) {
+    const a = particles[i], ar = a.r, am = a.m;
+    for (let j = i + 1; j < n; j++) {
+      const b = particles[j];
+      let dx = b.x - a.x, dy = b.y - a.y, dz = b.z - a.z;
+      const rs = ar + b.r, d2 = dx * dx + dy * dy + dz * dz;
+      if (d2 >= rs * rs) continue;
+      let d = Math.sqrt(d2);
+      if (d < 1e-9) { dx = 1e-3; dy = 0; dz = 0; d = 1e-3; }
+      const nx = dx / d, ny = dy / d, nz = dz / d, bm = b.m, mt = am + bm;
+      const ov = rs - d, ca = ov * (bm / mt), cb = ov * (am / mt);
+      a.x -= nx * ca; a.y -= ny * ca; a.z -= nz * ca;
+      b.x += nx * cb; b.y += ny * cb; b.z += nz * cb;
+      const rvn = (b.vx - a.vx) * nx + (b.vy - a.vy) * ny + (b.vz - a.vz) * nz;
+      if (rvn > 0) continue;
+      const jImp = -(1 + e) * rvn / (1 / am + 1 / bm);
+      const jx = jImp * nx, jy = jImp * ny, jz = jImp * nz;
+      a.vx -= jx / am; a.vy -= jy / am; a.vz -= jz / am;
+      b.vx += jx / bm; b.vy += jy / bm; b.vz += jz / bm;
+      collisionCount++;
+    }
+  }
+}
+
+function setGroupTemperature(gi) {
+  const g = GROUPS[gi], list = particles.filter(p => p.gi === gi);
+  if (!list.length) return;
+  let sum = 0;
+  for (const p of list) sum += p.m * (p.vx * p.vx + p.vy * p.vy + p.vz * p.vz);
+  const Tnow = sum / (3 * CFG.speedScale * CFG.speedScale * list.length);
+  if (!isFinite(Tnow) || Tnow < 1e-9) {
+    for (const p of list) { const s = CFG.speedScale * Math.sqrt(g.T / p.m); p.vx = s * gauss(); p.vy = s * gauss(); p.vz = s * gauss(); }
+  } else {
+    const lam = Math.sqrt(g.T / Tnow);
+    for (const p of list) { p.vx *= lam; p.vy *= lam; p.vz *= lam; }
+  }
+}
+
+function applyGroupRadius(gi) {
+  const g = GROUPS[gi], m = massOf(g.r), h = HALF - g.r;
+  for (const p of particles) {
+    if (p.gi !== gi) continue;
+    p.r = g.r; p.m = m; p.mesh.scale.setScalar(g.r);
+    p.x = Math.max(-h, Math.min(h, p.x)); p.y = Math.max(-h, Math.min(h, p.y)); p.z = Math.max(-h, Math.min(h, p.z));
+  }
+}
+
+// UI: HUD
+const hudGroupsEl = document.getElementById('hudGroups');
+const hudT = GROUPS.map((g, i) => {
+  const row = document.createElement('div'); row.className = 'g-line';
+  row.innerHTML = `<span class="dot" style="background:${g.hex}"></span><span class="nm">${'ABC'[i]}</span><span class="tv" id="hT${i}">T = —</span>`;
+  hudGroupsEl.appendChild(row); return row.querySelector('.tv');
+});
+const pVal = document.getElementById('pVal'), eVal = document.getElementById('eVal'), cVal = document.getElementById('cVal');
+
+// UI: Panel
+const panel = document.getElementById('panel');
+const groupsSec = document.getElementById('groupsSec');
+const groupInputs = GROUPS.map((g, gi) => {
+  const sec = document.createElement('div'); sec.className = 'sec';
+  sec.innerHTML = `<div class="gsec-h"><span class="dot" style="background:${g.hex}"></span>Группа ${'ABC'[gi]} <span class="dim">${g.count} шт.</span></div>
+    <div class="row"><label>Температура</label><input type="range" id="gt${gi}" min="0.1" max="4" step="0.05" value="${g.T}"><span class="val" id="gtv${gi}">${g.T.toFixed(2)}</span></div>
+    <div class="row"><label>Размер</label><input type="range" id="gr${gi}" min="0.12" max="0.6" step="0.01" value="${g.r}"><span class="val" id="grv${gi}">${g.r.toFixed(2)}</span></div>`;
+  groupsSec.appendChild(sec);
+  const tIn = sec.querySelector('#gt' + gi), tOut = sec.querySelector('#gtv' + gi);
+  tIn.addEventListener('input', () => { g.T = parseFloat(tIn.value); tOut.textContent = g.T.toFixed(2); setGroupTemperature(gi); });
+  const rIn = sec.querySelector('#gr' + gi), rOut = sec.querySelector('#grv' + gi);
+  rIn.addEventListener('input', () => { g.r = parseFloat(rIn.value); rOut.textContent = g.r.toFixed(2); applyGroupRadius(gi); });
+  return { tIn, tOut, rIn, rOut };
+});
+
+const restIn = document.getElementById('rest'), restV = document.getElementById('restV');
+restIn.addEventListener('input', () => { state.restitution = parseFloat(restIn.value); restV.textContent = state.restitution.toFixed(2); });
+
+const wallSeg = document.getElementById('wallSeg'), wallTRow = document.getElementById('wallTRow');
+const wallTIn = document.getElementById('wallT'), wallTV = document.getElementById('wallTV');
+wallSeg.addEventListener('click', ev => {
+  const btn = ev.target.closest('button[data-wall]'); if (!btn) return;
+  state.wallMode = btn.dataset.wall;
+  [...wallSeg.children].forEach(b => b.classList.toggle('on', b === btn));
+  wallTRow.style.display = state.wallMode === 'absorb' ? 'flex' : 'none';
+});
+wallTIn.addEventListener('input', () => { state.wallT = parseFloat(wallTIn.value); wallTV.textContent = state.wallT.toFixed(2); });
+
+const tsIn = document.getElementById('ts'), tsV = document.getElementById('tsV');
+tsIn.addEventListener('input', () => { state.timeScale = parseFloat(tsIn.value); tsV.textContent = state.timeScale.toFixed(2) + '×'; });
+
+const btnPlay = document.getElementById('btnPlay'), btnReset = document.getElementById('btnReset'), btnPanel = document.getElementById('btnPanel');
+function setRunning(v) { state.running = v; btnPlay.textContent = v ? '⏸ Пауза' : '▶ Старт'; btnPlay.classList.toggle('primary', !v); }
+btnPlay.addEventListener('click', () => setRunning(!state.running));
+btnReset.addEventListener('click', () => { buildParticles(); lastHudTime = performance.now(); lastCollisions = 0; lastWallImpulse = 0; });
+btnPanel.addEventListener('click', () => panel.classList.toggle('open'));
+
+const camDir = new THREE.Vector3(0.62, 0.46, 0.86).normalize();
+function fitCamera() {
+  const w = window.innerWidth, h = window.innerHeight;
+  renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix();
+  const R = CFG.L * Math.sqrt(3) * 0.5, vFov = camera.fov * Math.PI / 180;
+  const hFov = 2 * Math.atan(Math.tan(vFov / 2) * camera.aspect);
+  const dist = Math.max(R / Math.tan(vFov / 2), R / Math.tan(hFov / 2)) * 1.06;
+  camera.position.copy(camDir).multiplyScalar(dist); camera.lookAt(0, 0, 0);
+  controls.minDistance = dist * 0.55; controls.maxDistance = dist * 1.7;
+}
+window.addEventListener('resize', fitCamera);
+window.addEventListener('orientationchange', () => setTimeout(fitCamera, 150));
+
+let acc = 0, lastTime = performance.now(), hudAcc = 0, lastHudTime = performance.now(), lastCollisions = 0, lastWallImpulse = 0;
+
+function updateHUD() {
+  const now = performance.now(), elapsed = Math.max((now - lastHudTime) / 1000, 1e-3);
+  lastHudTime = now;
+  const sums = new Array(GROUPS.length).fill(0), cnts = new Array(GROUPS.length).fill(0);
+  let ke = 0;
+  for (const p of particles) {
+    const v2 = p.vx * p.vx + p.vy * p.vy + p.vz * p.vz;
+    sums[p.gi] += p.m * v2; cnts[p.gi]++; ke += 0.5 * p.m * v2;
+  }
+  const k = 3 * CFG.speedScale * CFG.speedScale;
+  for (let i = 0; i < GROUPS.length; i++) {
+    const T = cnts[i] ? sums[i] / (k * cnts[i]) : 0;
+    hudT[i].textContent = 'T = ' + T.toFixed(2);
+  }
+  const impulseRate = (wallImpulse - lastWallImpulse) / elapsed;
+  const pressure = impulseRate / (6 * CFG.L * CFG.L) * 100;
+  const hits = Math.round((collisionCount - lastCollisions) / elapsed);
+  lastWallImpulse = wallImpulse; lastCollisions = collisionCount;
+  pVal.textContent = pressure.toFixed(1); eVal.textContent = ke.toFixed(1); cVal.textContent = hits;
+}
+
+function animate(now) {
+  requestAnimationFrame(animate);
+  let dt = (now - lastTime) / 1000; lastTime = now;
+  if (!isFinite(dt) || dt < 0) dt = 0;
+  dt = Math.min(dt, 0.05);
+  if (state.running) {
+    acc += dt * state.timeScale;
+    let steps = 0;
+    while (acc >= CFG.dt && steps < CFG.maxSub) { physicsStep(CFG.dt); acc -= CFG.dt; steps++; }
+    if (acc > CFG.dt) acc = 0;
+  }
+  for (let i = 0; i < particles.length; i++) { const p = particles[i]; p.mesh.position.set(p.x, p.y, p.z); }
+  controls.update(); renderer.render(scene, camera);
+  hudAcc += dt; if (hudAcc > 0.12) { hudAcc = 0; updateHUD(); }
+}
+
+fitCamera(); buildParticles(); setRunning(false);
+requestAnimationFrame(animate);
+setTimeout(fitCamera, 100);
+</script>
+</body>
+</html>
