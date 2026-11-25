@@ -1,173 +1,98 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ru">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="theme-color" content="#070b12">
-<title>Газ 3D</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>МКТ 3D — модель движения молекул</title>
 <style>
-:root{
-  --bg:#070b12; --fg:#e8eef8; --dim:#8b9bb4;
-  --line:#1c2637; --accent:#4dd0ff;
-}
-*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
-html,body{
-  margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--fg);
-  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
-  overscroll-behavior:none;user-select:none;-webkit-user-select:none;
-}
-canvas{display:block;width:100%;height:100%;touch-action:none;}
-
-/* ---------- HUD ---------- */
-#hud{
-  position:fixed;top:0;left:0;right:0;pointer-events:none;
-  padding:calc(8px + env(safe-area-inset-top)) 10px 8px;
-}
-.hud-card{
-  display:inline-block;background:rgba(10,16,26,.66);
-  -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
-  border:1px solid rgba(255,255,255,.07);border-radius:14px;
-  padding:8px 11px;font-size:12px;line-height:1.55;
-  font-variant-numeric:tabular-nums;min-width:150px;
-}
-.g-line{display:flex;align-items:center;gap:7px;white-space:nowrap;}
-.g-line .dot{width:9px;height:9px;border-radius:50%;flex:0 0 auto;}
-.g-line .nm{color:var(--dim);min-width:12px;}
-.g-line .tv{font-weight:600;}
-.hud-bottom{
-  margin-top:6px;padding-top:6px;border-top:1px solid rgba(255,255,255,.08);
-  display:flex;gap:12px;color:var(--dim);
-}
-.hud-bottom b{color:var(--fg);font-weight:600;}
-
-/* ---------- Bottom UI ---------- */
-#bottom{
-  position:fixed;left:0;right:0;bottom:0;display:flex;flex-direction:column;
-  gap:8px;padding:0 10px calc(10px + env(safe-area-inset-bottom));
-  pointer-events:none;
-}
-#bottom>*{pointer-events:auto;}
-#bar{display:flex;gap:8px;}
-.btn{
-  flex:1;padding:14px 10px;border-radius:14px;border:1px solid var(--line);
-  background:rgba(15,23,36,.92);color:var(--fg);font-size:15px;font-weight:600;
-  font-family:inherit;-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
-  transition:transform .08s ease,background .15s;
-}
-.btn:active{transform:scale(.97);}
-.btn.primary{background:rgba(77,208,255,.16);border-color:rgba(77,208,255,.5);color:var(--accent);}
-.btn.icon{flex:0 0 62px;font-size:18px;}
-
-#panel{
-  background:rgba(10,16,26,.94);
-  -webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);
-  border:1px solid rgba(255,255,255,.08);border-radius:18px;
-  padding:6px 14px 14px;max-height:56vh;overflow-y:auto;
-  -webkit-overflow-scrolling:touch;display:none;
-}
-#panel.open{display:block;}
-.sec{padding:10px 0;border-bottom:1px solid rgba(255,255,255,.06);}
-.sec:last-child{border-bottom:none;}
-.sec-t{
-  font-size:11px;letter-spacing:.09em;text-transform:uppercase;
-  color:var(--dim);font-weight:700;margin:4px 0 6px;
-}
-.row{display:flex;align-items:center;gap:10px;font-size:13px;padding:3px 0;}
-.row label{flex:0 0 88px;color:var(--dim);}
-.row .val{flex:0 0 48px;text-align:right;font-weight:700;font-size:12px;
-  font-variant-numeric:tabular-nums;}
-input[type=range]{
-  flex:1;min-width:0;height:28px;background:transparent;
-  -webkit-appearance:none;appearance:none;margin:0;
-}
-input[type=range]::-webkit-slider-runnable-track{height:4px;border-radius:2px;background:#243149;}
-input[type=range]::-webkit-slider-thumb{
-  -webkit-appearance:none;width:22px;height:22px;border-radius:50%;
-  background:var(--accent);margin-top:-9px;
-  box-shadow:0 0 0 5px rgba(77,208,255,.13);
-}
-input[type=range]::-moz-range-track{height:4px;border-radius:2px;background:#243149;}
-input[type=range]::-moz-range-thumb{
-  width:22px;height:22px;border:none;border-radius:50%;background:var(--accent);
-}
-.seg{display:flex;gap:8px;margin:6px 0 2px;}
-.seg button{
-  flex:1;padding:11px 6px;border-radius:11px;border:1px solid #243149;
-  background:#111a28;color:var(--dim);font-size:12px;font-weight:700;font-family:inherit;
-}
-.seg button.on{background:rgba(77,208,255,.15);border-color:var(--accent);color:var(--accent);}
-.gsec-h{display:flex;align-items:center;gap:7px;font-size:13px;font-weight:700;margin:8px 0 2px;}
-.gsec-h .dot{width:10px;height:10px;border-radius:50%;}
-.gsec-h .dim{color:var(--dim);font-weight:500;font-size:11px;}
-.hint{font-size:11px;color:var(--dim);line-height:1.45;margin-top:4px;}
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 100%; height: 100%; overflow: hidden; background: #060915; }
+  body { font-family: system-ui, Arial, sans-serif; color: #e8ecf8; }
+  canvas { display: block; }
+  #hud { position: fixed; top: 16px; left: 16px; pointer-events: none;
+         text-shadow: 0 2px 8px rgba(0,0,0,.8); }
+  #hud h1 { font-size: 18px; font-weight: 600; }
+  #hud .hint { font-size: 11px; color: #7f9bd6; margin-top: 4px; }
+  #panel { position: fixed; top: 16px; right: 16px; width: 320px;
+    background: rgba(18,26,46,0.9); backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px); border-radius: 12px; padding: 16px;
+    box-shadow: 0 0 0 1px #23304f, 0 12px 40px rgba(0,0,0,.6);
+    font-size: 13px; z-index: 10; max-height: calc(100vh - 32px); overflow-y: auto; }
+  #panel h2 { font-size: 11px; text-transform: uppercase; letter-spacing: .1em;
+              color: #7f9bd6; margin: 16px 0 8px; }
+  #panel h2:first-child { margin-top: 0; }
+  label { display: block; margin: 10px 0 4px; color: #b7c4e6; }
+  .val { float: right; color: #8fe3b0; font-variant-numeric: tabular-nums; }
+  input[type=range] { width: 100%; accent-color: #5b8cff; height: 20px; }
+  .row { display: flex; gap: 8px; margin-top: 14px; }
+  button { flex: 1; padding: 9px; border: 0; border-radius: 8px; cursor: pointer;
+           background: #5b8cff; color: #fff; font-weight: 600; font-size: 13px;
+           transition: filter .15s; }
+  button.alt { background: #2a3757; }
+  button:hover { filter: brightness(1.15); }
+  button:active { transform: translateY(1px); }
+  .stats { font-variant-numeric: tabular-nums; line-height: 1.75; color: #b7c4e6;
+           background: rgba(6,9,21,.5); border-radius: 8px; padding: 10px; }
+  .stats b { color: #fff; }
+  .hintbox { font-size: 11px; color: #6d7ea8; line-height: 1.5; margin-top: 12px;
+             border-top: 1px solid #23304f; padding-top: 10px; }
+  .hintbox code { background: rgba(91,140,255,.15); padding: 1px 4px;
+                  border-radius: 3px; color: #a7c0ff; }
+  @media (max-width: 700px) {
+    #panel { width: 280px; font-size: 12px; padding: 12px; }
+  }
 </style>
 </head>
 <body>
 
-<canvas id="c"></canvas>
-
 <div id="hud">
-  <div class="hud-card">
-    <div id="hudGroups"></div>
-    <div class="hud-bottom">
-      <span>P <b id="pVal">—</b></span>
-      <span>E <b id="eVal">—</b></span>
-      <span>уд/с <b id="cVal">—</b></span>
-    </div>
-  </div>
+  <h1>МКТ 3D — движение молекул</h1>
+  <div class="hint">ЛКМ — вращать · Колесо — зум · ПКМ — панорама</div>
 </div>
 
-<div id="bottom">
-  <div id="panel">
-    <div class="sec">
-      <div class="sec-t">Столкновения</div>
-      <div class="row">
-        <label>Упругость</label>
-        <input type="range" id="rest" min="0.5" max="1" step="0.01" value="0.98">
-        <span class="val" id="restV">0.98</span>
-      </div>
-      <div class="hint">1.00 — упругие (энергия сохраняется), меньше — неупругие (газ остывает). Импульс сохраняется всегда.</div>
-    </div>
+<div id="panel">
+  <h2>Параметры</h2>
 
-    <div class="sec">
-      <div class="sec-t">Стенки</div>
-      <div class="seg" id="wallSeg">
-        <button data-wall="reflect" class="on">Отражают</button>
-        <button data-wall="absorb">Поглощают тепло</button>
-      </div>
-      <div class="row" id="wallTRow" style="display:none">
-        <label>T стенки</label>
-        <input type="range" id="wallT" min="0.1" max="3" step="0.05" value="1">
-        <span class="val" id="wallTV">1.00</span>
-      </div>
-    </div>
+  <label>Температура T <span class="val" id="vT">25 °C · 298.1 K</span></label>
+  <input type="range" id="T" min="-270" max="40" value="25" step="1">
 
-    <div class="sec" id="groupsSec"></div>
+  <label>Число молекул <span class="val" id="vN">150</span></label>
+  <input type="range" id="N" min="20" max="300" value="150" step="10">
 
-    <div class="sec">
-      <div class="sec-t">Симуляция</div>
-      <div class="row">
-        <label>Скорость</label>
-        <input type="range" id="ts" min="0.1" max="2" step="0.05" value="1">
-        <span class="val" id="tsV">1.00×</span>
-      </div>
-    </div>
+  <label>Теплообмен α <span class="val" id="vA">0.30</span></label>
+  <input type="range" id="A" min="0" max="1" value="0.3" step="0.01">
+
+  <label>Разные молекулы <span class="val" id="vM">вкл</span></label>
+  <input type="range" id="M" min="0" max="1" value="1" step="1">
+
+  <div class="row">
+    <button id="reset">Перезапуск</button>
+    <button class="alt" id="pause">Пауза</button>
   </div>
 
-  <div id="bar">
-    <button id="btnPlay" class="btn primary">▶ Старт</button>
-    <button id="btnReset" class="btn icon">⟲</button>
-    <button id="btnPanel" class="btn icon">⚙</button>
+  <h2>Показания</h2>
+  <div class="stats">
+    T внутр.: <b id="sTi">—</b><br>
+    T кинет.: <b id="sTk">—</b><br>
+    v<sub>rms</sub>: <b id="sV">—</b><br>
+    Столкновений/с: <b id="sC">—</b><br>
+    FPS: <b id="sF">—</b>
+  </div>
+
+  <div class="hintbox">
+    Температура: <b>°C</b> на ползунке, физика в <b>кельвинах</b>.
+    Диапазон: −270 °C (3.15 K) … +40 °C (313.15 K).<br>
+    <code>α=0</code> — чисто упругие удары (T кин. = const).<br>
+    <code>α&gt;0</code> — обмен внутренним теплом между молекулами.<br>
+    Свечение = внутренняя T; размер = масса.
   </div>
 </div>
 
 <script type="importmap">
 {
   "imports": {
-    "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
-    "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
   }
 }
 </script>
@@ -176,256 +101,336 @@ input[type=range]::-moz-range-thumb{
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
-const CFG = { L: 12, baseR: 0.30, speedScale: 2.2, dt: 1/120, maxSub: 4 };
-const HALF = CFG.L / 2;
+// ====== Физические константы (СИ) ======
+const k_B  = 1.380649e-23;        // Дж/К
+const AMU  = 1.66053906660e-27;   // кг
+const M_N2 = 28 * AMU;            // кг (масса N₂)
 
-const GROUPS = [
-  { color: 0xff6b6b, hex: '#ff6b6b', count: 40, r: 0.30, T: 1.00 },
-  { color: 0x4dd0ff, hex: '#4dd0ff', count: 40, r: 0.24, T: 1.80 },
-  { color: 0xffd166, hex: '#ffd166', count: 30, r: 0.36, T: 0.60 },
-];
+// Масштаб скорости: v_экран [ед/с] = v_реал [м/с] × V_SCALE
+const V_SCALE = 0.01;
 
-const state = { running: false, restitution: 0.98, wallMode: 'reflect', wallT: 1.0, timeScale: 1.0 };
+// Диапазон: −270 °C … +40 °C  →  3.15 K … 313.15 K
+const C2K = c => c + 273.15;
+const K2C = k => k - 273.15;
+const T_MIN_K = C2K(-270);        // 3.15 K
+const T_MAX_K = C2K(40);          // 313.15 K
 
-const canvas = document.getElementById('c');
-const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
-renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+const BOX = 16, HALF = BOX / 2;
+const PALETTE = [0x5b8cff, 0x8fe3b0, 0xffb454, 0xff6b8b, 0xb48cff, 0x4fd6e3];
 
-const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x070b12);
-const camera = new THREE.PerspectiveCamera(55, 1, 0.1, 500);
-const controls = new OrbitControls(camera, canvas);
-controls.enableDamping = true; controls.dampingFactor = 0.08; controls.enablePan = false;
-controls.rotateSpeed = 0.7; controls.zoomSpeed = 0.8; controls.target.set(0, 0, 0);
+const COLD = { r: 0.15, g: 0.35, b: 0.95 };  // глубокий синий при 3 K
+const HOT  = { r: 1.00, g: 0.55, b: 0.15 };  // тёплый оранжевый при 313 K
 
-scene.add(new THREE.HemisphereLight(0x8fa8ff, 0x0b1220, 1.15));
-const dl1 = new THREE.DirectionalLight(0xffffff, 1.25); dl1.position.set(9, 14, 11); scene.add(dl1);
-const dl2 = new THREE.DirectionalLight(0x5ea8ff, 0.65); dl2.position.set(-11, -7, -8); scene.add(dl2);
-
-const boxGeo = new THREE.BoxGeometry(CFG.L, CFG.L, CFG.L);
-scene.add(new THREE.LineSegments(new THREE.EdgesGeometry(boxGeo),
-  new THREE.LineBasicMaterial({ color: 0x33527a, transparent: true, opacity: 0.95 })));
-scene.add(new THREE.Mesh(boxGeo, new THREE.MeshBasicMaterial({
-  color: 0x12314f, transparent: true, opacity: 0.075, side: THREE.BackSide, depthWrite: false })));
-
-const sphereGeo = new THREE.SphereGeometry(1, 14, 10);
-const groupMaterials = GROUPS.map(g => new THREE.MeshStandardMaterial({
-  color: g.color, emissive: g.color, emissiveIntensity: 0.32, roughness: 0.35, metalness: 0.05 }));
-
-let particles = [], wallImpulse = 0, collisionCount = 0;
-const massOf = r => Math.pow(r / CFG.baseR, 3);
-
-function gauss() {
+// ====== Утилиты ======
+const rand  = (a, b) => a + Math.random() * (b - a);
+const gauss = () => {
   let u = 0, v = 0;
   while (u === 0) u = Math.random();
   while (v === 0) v = Math.random();
   return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
-}
+};
+const sigmaScreen = (T_K, m_kg) => Math.sqrt(k_B * T_K / m_kg) * V_SCALE;
 
-function shuffle(a) {
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = (Math.random() * (i + 1)) | 0;
-    [a[i], a[j]] = [a[j], a[i]];
-  }
-  return a;
-}
+// ====== Сцена ======
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x060915);
+scene.fog = new THREE.Fog(0x060915, 26, 60);
 
-function buildParticles() {
-  for (const p of particles) scene.remove(p.mesh);
-  particles = [];
-  const N = GROUPS.reduce((s, g) => s + g.count, 0);
-  const side = Math.max(1, Math.ceil(Math.cbrt(N)));
-  const cell = CFG.L / side;
-  const cells = [];
-  for (let i = 0; i < side; i++) for (let j = 0; j < side; j++) for (let k = 0; k < side; k++) cells.push([i, j, k]);
-  shuffle(cells);
-  let idx = 0;
-  for (let gi = 0; gi < GROUPS.length; gi++) {
-    const g = GROUPS[gi], m = massOf(g.r);
-    for (let n = 0; n < g.count; n++) {
-      const [i, j, k] = cells[idx++];
-      const x = -HALF + cell * (i + 0.5) + (Math.random() - 0.5) * cell * 0.55;
-      const y = -HALF + cell * (j + 0.5) + (Math.random() - 0.5) * cell * 0.55;
-      const z = -HALF + cell * (k + 0.5) + (Math.random() - 0.5) * cell * 0.55;
-      const s = CFG.speedScale * Math.sqrt(g.T / m);
-      const mesh = new THREE.Mesh(sphereGeo, groupMaterials[gi]);
-      mesh.scale.setScalar(g.r); mesh.position.set(x, y, z); scene.add(mesh);
-      particles.push({ gi, x, y, z, vx: s * gauss(), vy: s * gauss(), vz: s * gauss(), r: g.r, m, mesh });
+const camera = new THREE.PerspectiveCamera(55, innerWidth / innerHeight, 0.1, 200);
+camera.position.set(18, 14, 18);
+
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(innerWidth, innerHeight);
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.1;
+document.body.appendChild(renderer.domElement);
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.dampingFactor = 0.08;
+controls.minDistance = 6;
+controls.maxDistance = 70;
+
+scene.add(new THREE.AmbientLight(0xffffff, 0.35));
+const keyLight = new THREE.DirectionalLight(0xffffff, 1.2);
+keyLight.position.set(15, 20, 15);
+scene.add(keyLight);
+const fillLight = new THREE.DirectionalLight(0x5b8cff, 0.55);
+fillLight.position.set(-15, -10, -15);
+scene.add(fillLight);
+
+const boxGeo = new THREE.BoxGeometry(BOX, BOX, BOX);
+scene.add(new THREE.LineSegments(
+  new THREE.EdgesGeometry(boxGeo),
+  new THREE.LineBasicMaterial({ color: 0x3a4d7a })
+));
+scene.add(new THREE.Mesh(boxGeo, new THREE.MeshBasicMaterial({
+  color: 0x223055, transparent: true, opacity: 0.07,
+  side: THREE.BackSide, depthWrite: false
+})));
+
+// ====== Молекула ======
+const sphereGeo = new THREE.SphereGeometry(1, 16, 12);
+const tmpColor = new THREE.Color();
+
+class Molecule {
+  constructor(T_K, mixedMass) {
+    if (mixedMass) {
+      const massAmu = rand(2, 44);
+      this.m = massAmu * AMU;
+      this.r = 0.6 * Math.cbrt(massAmu / 28);
+      this.baseColorHex = PALETTE[(Math.random() * PALETTE.length) | 0];
+    } else {
+      this.m = M_N2;
+      this.r = 0.6;
+      this.baseColorHex = 0x5b8cff;
     }
+
+    // Внутренняя T с разбросом ±30%
+    this.T = Math.max(0.1, T_K * (1 + (Math.random() - 0.5) * 0.6));
+
+    let x, y, z, tries = 0;
+    do {
+      x = rand(-HALF + this.r, HALF - this.r);
+      y = rand(-HALF + this.r, HALF - this.r);
+      z = rand(-HALF + this.r, HALF - this.r);
+    } while (++tries < 30 && molecules.some(o => {
+      const dx = o.pos.x - x, dy = o.pos.y - y, dz = o.pos.z - z;
+      return dx*dx + dy*dy + dz*dz < (o.r + this.r + 0.1) ** 2;
+    }));
+    this.pos = new THREE.Vector3(x, y, z);
+
+    // Максвелл: σ = √(k_B T / m), реальная скорость → экранная
+    const sigma = sigmaScreen(T_K, this.m);
+    this.vel = new THREE.Vector3(gauss()*sigma, gauss()*sigma, gauss()*sigma);
+
+    this.color = new THREE.Color(this.baseColorHex);
+    this.mat = new THREE.MeshStandardMaterial({
+      color: this.color, emissive: this.color, emissiveIntensity: 0.3,
+      roughness: 0.35, metalness: 0.15
+    });
+    this.mesh = new THREE.Mesh(sphereGeo, this.mat);
+    this.mesh.scale.setScalar(this.r);
+    this.mesh.position.copy(this.pos);
   }
-  wallImpulse = 0; collisionCount = 0;
+
+  updateVisual() {
+    this.mesh.position.copy(this.pos);
+    const t = Math.max(0, Math.min(1, (this.T - T_MIN_K) / (T_MAX_K - T_MIN_K)));
+    tmpColor.setRGB(
+      COLD.r + (HOT.r - COLD.r) * t,
+      COLD.g + (HOT.g - COLD.g) * t,
+      COLD.b + (HOT.b - COLD.b) * t
+    );
+    this.mat.emissive.copy(tmpColor);
+    this.mat.emissiveIntensity = 0.15 + 0.65 * t;
+  }
+  dispose() { this.mat.dispose(); }
 }
 
-function wallHit(p, axis, sign) {
-  const key = axis === 'x' ? 'vx' : axis === 'y' ? 'vy' : 'vz';
-  const v = p[key];
-  if (v * sign <= 0) return;
-  wallImpulse += (1 + state.restitution) * Math.abs(v) * p.m;
-  p[key] = -v * state.restitution;
-  if (state.wallMode === 'absorb' && Math.random() < 0.6) {
-    const s = CFG.speedScale * Math.sqrt(state.wallT / p.m);
-    p.vx = s * gauss(); p.vy = s * gauss(); p.vz = s * gauss();
+// ====== Состояние ======
+let molecules = [];
+let collisions = 0, prevCollisions = 0, paused = false;
+let currentT_K = C2K(25);   // 298.15 K старт (комнатная)
+const params = { N: 150, alpha: 0.3, mixedMass: 1 };
+
+function rebuild() {
+  for (const p of molecules) { scene.remove(p.mesh); p.dispose(); }
+  molecules = [];
+  for (let i = 0; i < params.N; i++) {
+    const p = new Molecule(currentT_K, params.mixedMass);
+    molecules.push(p); scene.add(p.mesh);
   }
+  collisions = 0; prevCollisions = 0;
 }
 
+// ====== Физика ======
 function physicsStep(dt) {
-  const n = particles.length, e = state.restitution;
-  for (let i = 0; i < n; i++) { const p = particles[i]; p.x += p.vx * dt; p.y += p.vy * dt; p.z += p.vz * dt; }
-  for (let i = 0; i < n; i++) {
-    const p = particles[i], r = p.r;
-    if (p.x - r < -HALF) { p.x = -HALF + r; wallHit(p, 'x', -1); } else if (p.x + r > HALF) { p.x = HALF - r; wallHit(p, 'x', 1); }
-    if (p.y - r < -HALF) { p.y = -HALF + r; wallHit(p, 'y', -1); } else if (p.y + r > HALF) { p.y = HALF - r; wallHit(p, 'y', 1); }
-    if (p.z - r < -HALF) { p.z = -HALF + r; wallHit(p, 'z', -1); } else if (p.z + r > HALF) { p.z = HALF - r; wallHit(p, 'z', 1); }
+  const N = molecules.length;
+
+  // Движение + упругий отскок от стенок
+  for (let i = 0; i < N; i++) {
+    const p = molecules[i];
+    p.pos.addScaledVector(p.vel, dt);
+    const r = p.r;
+    if (p.pos.x - r < -HALF) { p.pos.x = -HALF + r; p.vel.x =  Math.abs(p.vel.x); collisions++; }
+    if (p.pos.x + r >  HALF) { p.pos.x =  HALF - r; p.vel.x = -Math.abs(p.vel.x); collisions++; }
+    if (p.pos.y - r < -HALF) { p.pos.y = -HALF + r; p.vel.y =  Math.abs(p.vel.y); collisions++; }
+    if (p.pos.y + r >  HALF) { p.pos.y =  HALF - r; p.vel.y = -Math.abs(p.vel.y); collisions++; }
+    if (p.pos.z - r < -HALF) { p.pos.z = -HALF + r; p.vel.z =  Math.abs(p.vel.z); collisions++; }
+    if (p.pos.z + r >  HALF) { p.pos.z =  HALF - r; p.vel.z = -Math.abs(p.vel.z); collisions++; }
   }
-  for (let i = 0; i < n; i++) {
-    const a = particles[i], ar = a.r, am = a.m;
-    for (let j = i + 1; j < n; j++) {
-      const b = particles[j];
-      let dx = b.x - a.x, dy = b.y - a.y, dz = b.z - a.z;
-      const rs = ar + b.r, d2 = dx * dx + dy * dy + dz * dz;
-      if (d2 >= rs * rs) continue;
-      let d = Math.sqrt(d2);
-      if (d < 1e-9) { dx = 1e-3; dy = 0; dz = 0; d = 1e-3; }
-      const nx = dx / d, ny = dy / d, nz = dz / d, bm = b.m, mt = am + bm;
-      const ov = rs - d, ca = ov * (bm / mt), cb = ov * (am / mt);
-      a.x -= nx * ca; a.y -= ny * ca; a.z -= nz * ca;
-      b.x += nx * cb; b.y += ny * cb; b.z += nz * cb;
-      const rvn = (b.vx - a.vx) * nx + (b.vy - a.vy) * ny + (b.vz - a.vz) * nz;
-      if (rvn > 0) continue;
-      const jImp = -(1 + e) * rvn / (1 / am + 1 / bm);
-      const jx = jImp * nx, jy = jImp * ny, jz = jImp * nz;
-      a.vx -= jx / am; a.vy -= jy / am; a.vz -= jz / am;
-      b.vx += jx / bm; b.vy += jy / bm; b.vz += jz / bm;
-      collisionCount++;
+
+  // Столкновения молекул (упругие + обмен внутренним теплом)
+  for (let i = 0; i < N; i++) {
+    const a = molecules[i];
+    for (let j = i + 1; j < N; j++) {
+      const b = molecules[j];
+      const dx = b.pos.x - a.pos.x, dy = b.pos.y - a.pos.y, dz = b.pos.z - a.pos.z;
+      const rad = a.r + b.r;
+      const d2 = dx*dx + dy*dy + dz*dz;
+      if (d2 >= rad*rad || d2 === 0) continue;
+
+      const d = Math.sqrt(d2);
+      const nx = dx/d, ny = dy/d, nz = dz/d;
+
+      const overlap = rad - d;
+      const mt = a.m + b.m;
+      const corrA = overlap * (b.m / mt), corrB = overlap * (a.m / mt);
+      a.pos.x -= nx*corrA; a.pos.y -= ny*corrA; a.pos.z -= nz*corrA;
+      b.pos.x += nx*corrB; b.pos.y += ny*corrB; b.pos.z += nz*corrB;
+
+      const rvx = b.vel.x - a.vel.x, rvy = b.vel.y - a.vel.y, rvz = b.vel.z - a.vel.z;
+      const vn = rvx*nx + rvy*ny + rvz*nz;
+      if (vn >= 0) continue;
+
+      // Упругий удар по линии центров
+      const ratioA = 2 * b.m / mt, ratioB = 2 * a.m / mt;
+      a.vel.x += vn*ratioA*nx; a.vel.y += vn*ratioA*ny; a.vel.z += vn*ratioA*nz;
+      b.vel.x -= vn*ratioB*nx; b.vel.y -= vn*ratioB*ny; b.vel.z -= vn*ratioB*nz;
+      collisions++;
+
+      // Обмен внутренним теплом (α > 0)
+      if (params.alpha > 0) {
+        const alphaEff = Math.min(1, params.alpha * (0.5 + Math.abs(vn)/5));
+        const dT = alphaEff * (b.T - a.T) * 0.5;
+        a.T += dT; b.T -= dT;
+      }
     }
   }
 }
 
-function setGroupTemperature(gi) {
-  const g = GROUPS[gi], list = particles.filter(p => p.gi === gi);
-  if (!list.length) return;
+// ====== Статистика ======
+function kineticTemperature() {
+  const N = molecules.length; if (!N) return 0;
   let sum = 0;
-  for (const p of list) sum += p.m * (p.vx * p.vx + p.vy * p.vy + p.vz * p.vz);
-  const Tnow = sum / (3 * CFG.speedScale * CFG.speedScale * list.length);
-  if (!isFinite(Tnow) || Tnow < 1e-9) {
-    for (const p of list) { const s = CFG.speedScale * Math.sqrt(g.T / p.m); p.vx = s * gauss(); p.vy = s * gauss(); p.vz = s * gauss(); }
-  } else {
-    const lam = Math.sqrt(g.T / Tnow);
-    for (const p of list) { p.vx *= lam; p.vy *= lam; p.vz *= lam; }
+  for (const p of molecules) sum += p.m * p.vel.lengthSq();
+  // T = Σ m v_экр² / (3 V_SCALE² k_B N)
+  return sum / (3 * V_SCALE * V_SCALE * k_B * N);
+}
+
+function rmsVelocity() {
+  const N = molecules.length; if (!N) return 0;
+  let sum = 0;
+  for (const p of molecules) sum += p.vel.lengthSq();
+  return Math.sqrt(sum / N) / V_SCALE;  // м/с
+}
+
+const colAcc = { time: 0, count: 0, rate: 0 };
+
+function updateStats(dt) {
+  const N = molecules.length || 1;
+  let sumTi = 0;
+  for (const p of molecules) sumTi += p.T;
+  const avgTi = sumTi / N;
+  const Tk = kineticTemperature();
+  const vr = rmsVelocity();
+
+  document.getElementById('sTi').textContent =
+    `${K2C(avgTi).toFixed(1)} °C · ${avgTi.toFixed(1)} K`;
+  document.getElementById('sTk').textContent =
+    `${K2C(Tk).toFixed(1)} °C · ${Tk.toFixed(1)} K`;
+  document.getElementById('sV').textContent = `${vr.toFixed(0)} м/с`;
+
+  colAcc.time += dt;
+  colAcc.count += collisions - prevCollisions;
+  prevCollisions = collisions;
+  if (colAcc.time >= 1) {
+    colAcc.rate = colAcc.count / colAcc.time;
+    colAcc.time = 0; colAcc.count = 0;
+  }
+  document.getElementById('sC').textContent = colAcc.rate.toFixed(0);
+}
+
+let fpsCount = 0, fpsTime = performance.now();
+function updateFps(now) {
+  fpsCount++;
+  if (now - fpsTime > 500) {
+    const fps = fpsCount * 1000 / (now - fpsTime);
+    document.getElementById('sF').textContent = fps.toFixed(0);
+    fpsCount = 0; fpsTime = now;
   }
 }
 
-function applyGroupRadius(gi) {
-  const g = GROUPS[gi], m = massOf(g.r), h = HALF - g.r;
-  for (const p of particles) {
-    if (p.gi !== gi) continue;
-    p.r = g.r; p.m = m; p.mesh.scale.setScalar(g.r);
-    p.x = Math.max(-h, Math.min(h, p.x)); p.y = Math.max(-h, Math.min(h, p.y)); p.z = Math.max(-h, Math.min(h, p.z));
-  }
-}
-
-// UI: HUD
-const hudGroupsEl = document.getElementById('hudGroups');
-const hudT = GROUPS.map((g, i) => {
-  const row = document.createElement('div'); row.className = 'g-line';
-  row.innerHTML = `<span class="dot" style="background:${g.hex}"></span><span class="nm">${'ABC'[i]}</span><span class="tv" id="hT${i}">T = —</span>`;
-  hudGroupsEl.appendChild(row); return row.querySelector('.tv');
-});
-const pVal = document.getElementById('pVal'), eVal = document.getElementById('eVal'), cVal = document.getElementById('cVal');
-
-// UI: Panel
-const panel = document.getElementById('panel');
-const groupsSec = document.getElementById('groupsSec');
-const groupInputs = GROUPS.map((g, gi) => {
-  const sec = document.createElement('div'); sec.className = 'sec';
-  sec.innerHTML = `<div class="gsec-h"><span class="dot" style="background:${g.hex}"></span>Группа ${'ABC'[gi]} <span class="dim">${g.count} шт.</span></div>
-    <div class="row"><label>Температура</label><input type="range" id="gt${gi}" min="0.1" max="4" step="0.05" value="${g.T}"><span class="val" id="gtv${gi}">${g.T.toFixed(2)}</span></div>
-    <div class="row"><label>Размер</label><input type="range" id="gr${gi}" min="0.12" max="0.6" step="0.01" value="${g.r}"><span class="val" id="grv${gi}">${g.r.toFixed(2)}</span></div>`;
-  groupsSec.appendChild(sec);
-  const tIn = sec.querySelector('#gt' + gi), tOut = sec.querySelector('#gtv' + gi);
-  tIn.addEventListener('input', () => { g.T = parseFloat(tIn.value); tOut.textContent = g.T.toFixed(2); setGroupTemperature(gi); });
-  const rIn = sec.querySelector('#gr' + gi), rOut = sec.querySelector('#grv' + gi);
-  rIn.addEventListener('input', () => { g.r = parseFloat(rIn.value); rOut.textContent = g.r.toFixed(2); applyGroupRadius(gi); });
-  return { tIn, tOut, rIn, rOut };
-});
-
-const restIn = document.getElementById('rest'), restV = document.getElementById('restV');
-restIn.addEventListener('input', () => { state.restitution = parseFloat(restIn.value); restV.textContent = state.restitution.toFixed(2); });
-
-const wallSeg = document.getElementById('wallSeg'), wallTRow = document.getElementById('wallTRow');
-const wallTIn = document.getElementById('wallT'), wallTV = document.getElementById('wallTV');
-wallSeg.addEventListener('click', ev => {
-  const btn = ev.target.closest('button[data-wall]'); if (!btn) return;
-  state.wallMode = btn.dataset.wall;
-  [...wallSeg.children].forEach(b => b.classList.toggle('on', b === btn));
-  wallTRow.style.display = state.wallMode === 'absorb' ? 'flex' : 'none';
-});
-wallTIn.addEventListener('input', () => { state.wallT = parseFloat(wallTIn.value); wallTV.textContent = state.wallT.toFixed(2); });
-
-const tsIn = document.getElementById('ts'), tsV = document.getElementById('tsV');
-tsIn.addEventListener('input', () => { state.timeScale = parseFloat(tsIn.value); tsV.textContent = state.timeScale.toFixed(2) + '×'; });
-
-const btnPlay = document.getElementById('btnPlay'), btnReset = document.getElementById('btnReset'), btnPanel = document.getElementById('btnPanel');
-function setRunning(v) { state.running = v; btnPlay.textContent = v ? '⏸ Пауза' : '▶ Старт'; btnPlay.classList.toggle('primary', !v); }
-btnPlay.addEventListener('click', () => setRunning(!state.running));
-btnReset.addEventListener('click', () => { buildParticles(); lastHudTime = performance.now(); lastCollisions = 0; lastWallImpulse = 0; });
-btnPanel.addEventListener('click', () => panel.classList.toggle('open'));
-
-const camDir = new THREE.Vector3(0.62, 0.46, 0.86).normalize();
-function fitCamera() {
-  const w = window.innerWidth, h = window.innerHeight;
-  renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix();
-  const R = CFG.L * Math.sqrt(3) * 0.5, vFov = camera.fov * Math.PI / 180;
-  const hFov = 2 * Math.atan(Math.tan(vFov / 2) * camera.aspect);
-  const dist = Math.max(R / Math.tan(vFov / 2), R / Math.tan(hFov / 2)) * 1.06;
-  camera.position.copy(camDir).multiplyScalar(dist); camera.lookAt(0, 0, 0);
-  controls.minDistance = dist * 0.55; controls.maxDistance = dist * 1.7;
-}
-window.addEventListener('resize', fitCamera);
-window.addEventListener('orientationchange', () => setTimeout(fitCamera, 150));
-
-let acc = 0, lastTime = performance.now(), hudAcc = 0, lastHudTime = performance.now(), lastCollisions = 0, lastWallImpulse = 0;
-
-function updateHUD() {
-  const now = performance.now(), elapsed = Math.max((now - lastHudTime) / 1000, 1e-3);
-  lastHudTime = now;
-  const sums = new Array(GROUPS.length).fill(0), cnts = new Array(GROUPS.length).fill(0);
-  let ke = 0;
-  for (const p of particles) {
-    const v2 = p.vx * p.vx + p.vy * p.vy + p.vz * p.vz;
-    sums[p.gi] += p.m * v2; cnts[p.gi]++; ke += 0.5 * p.m * v2;
-  }
-  const k = 3 * CFG.speedScale * CFG.speedScale;
-  for (let i = 0; i < GROUPS.length; i++) {
-    const T = cnts[i] ? sums[i] / (k * cnts[i]) : 0;
-    hudT[i].textContent = 'T = ' + T.toFixed(2);
-  }
-  const impulseRate = (wallImpulse - lastWallImpulse) / elapsed;
-  const pressure = impulseRate / (6 * CFG.L * CFG.L) * 100;
-  const hits = Math.round((collisionCount - lastCollisions) / elapsed);
-  lastWallImpulse = wallImpulse; lastCollisions = collisionCount;
-  pVal.textContent = pressure.toFixed(1); eVal.textContent = ke.toFixed(1); cVal.textContent = hits;
-}
+// ====== Главный цикл ======
+let lastTime = performance.now();
 
 function animate(now) {
   requestAnimationFrame(animate);
-  let dt = (now - lastTime) / 1000; lastTime = now;
-  if (!isFinite(dt) || dt < 0) dt = 0;
-  dt = Math.min(dt, 0.05);
-  if (state.running) {
-    acc += dt * state.timeScale;
-    let steps = 0;
-    while (acc >= CFG.dt && steps < CFG.maxSub) { physicsStep(CFG.dt); acc -= CFG.dt; steps++; }
-    if (acc > CFG.dt) acc = 0;
+  const raw = Math.min(0.033, (now - lastTime) / 1000);
+  lastTime = now;
+
+  if (!paused && molecules.length) {
+    let maxV = 0;
+    for (const p of molecules) {
+      const s = p.vel.lengthSq();
+      if (s > maxV) maxV = s;
+    }
+    maxV = Math.sqrt(maxV);
+    const sub = Math.max(1, Math.min(8, Math.ceil(maxV * raw / 0.15)));
+    const h = raw / sub;
+    for (let i = 0; i < sub; i++) physicsStep(h);
   }
-  for (let i = 0; i < particles.length; i++) { const p = particles[i]; p.mesh.position.set(p.x, p.y, p.z); }
-  controls.update(); renderer.render(scene, camera);
-  hudAcc += dt; if (hudAcc > 0.12) { hudAcc = 0; updateHUD(); }
+
+  for (const p of molecules) p.updateVisual();
+  updateStats(raw);
+  updateFps(now);
+
+  controls.update();
+  renderer.render(scene, camera);
 }
 
-fitCamera(); buildParticles(); setRunning(false);
+// ====== UI ======
+const $ = id => document.getElementById(id);
+
+$('T').addEventListener('input', e => {
+  const newT_C = +e.target.value;
+  const newT_K = C2K(newT_C);
+  const ratio = newT_K / currentT_K;
+  const vRatio = Math.sqrt(ratio);
+  for (const p of molecules) {
+    p.vel.multiplyScalar(vRatio);
+    p.T = Math.max(0.1, p.T * ratio);
+  }
+  currentT_K = newT_K;
+  $('vT').textContent = `${newT_C} °C · ${newT_K.toFixed(1)} K`;
+});
+
+$('N').addEventListener('input', e => {
+  params.N = +e.target.value;
+  $('vN').textContent = params.N;
+  rebuild();
+});
+
+$('A').addEventListener('input', e => {
+  params.alpha = +e.target.value;
+  $('vA').textContent = params.alpha.toFixed(2);
+});
+
+$('M').addEventListener('input', e => {
+  params.mixedMass = +e.target.value;
+  $('vM').textContent = params.mixedMass ? 'вкл' : 'выкл';
+  rebuild();
+});
+
+$('reset').addEventListener('click', rebuild);
+
+$('pause').addEventListener('click', e => {
+  paused = !paused;
+  e.target.textContent = paused ? 'Продолжить' : 'Пауза';
+});
+
+addEventListener('resize', () => {
+  camera.aspect = innerWidth / innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+});
+
+// ====== Старт ======
+$('vT').textContent = `25 °C · ${currentT_K.toFixed(1)} K`;
+rebuild();
 requestAnimationFrame(animate);
-setTimeout(fitCamera, 100);
 </script>
 </body>
 </html>
